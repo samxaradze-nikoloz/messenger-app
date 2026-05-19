@@ -1,0 +1,56 @@
+{% extends 'users/base.html' %}
+{% block title %}Create Account — VIBE{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-art">
+    <div class="art-grid">
+      {% for i in "123456789" %}
+      <div class="art-cell"></div>
+      {% endfor %}
+    </div>
+    <div class="art-text">
+      <span>Share</span>
+      <span>Connect</span>
+      <span>Inspire</span>
+    </div>
+  </div>
+
+  <div class="auth-form-wrap">
+    <div class="auth-brand">VIBE</div>
+    <p class="auth-tagline">join the community</p>
+
+    <form method="post" class="auth-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <input type="text" name="full_name" placeholder="Full Name" required
+               value="{{ form.full_name.value|default:'' }}" />
+        {% if form.full_name.errors %}<span class="field-error">{{ form.full_name.errors.0 }}</span>{% endif %}
+      </div>
+      <div class="form-group">
+        <input type="email" name="email" placeholder="Email" required
+               value="{{ form.email.value|default:'' }}" />
+        {% if form.email.errors %}<span class="field-error">{{ form.email.errors.0 }}</span>{% endif %}
+      </div>
+      <div class="form-group">
+        <input type="text" name="username" placeholder="Username" required
+               value="{{ form.username.value|default:'' }}" />
+        {% if form.username.errors %}<span class="field-error">{{ form.username.errors.0 }}</span>{% endif %}
+      </div>
+      <div class="form-group">
+        <input type="password" name="password1" placeholder="Password" required />
+        {% if form.password1.errors %}<span class="field-error">{{ form.password1.errors.0 }}</span>{% endif %}
+      </div>
+      <div class="form-group">
+        <input type="password" name="password2" placeholder="Confirm Password" required />
+        {% if form.password2.errors %}<span class="field-error">{{ form.password2.errors.0 }}</span>{% endif %}
+      </div>
+      <button type="submit" class="btn-primary">Create Account</button>
+    </form>
+
+    <p class="auth-switch">
+      Already have an account? <a href="{% url 'users:login' %}">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

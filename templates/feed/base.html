@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}VIBE{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'users/main.css' %}" />
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav class="sidebar">
+  <div class="sidebar-logo">V</div>
+  <div class="sidebar-links">
+    <a href="/" class="nav-link {% block nav_home %}{% endblock %}" title="Home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+    </a>
+    <a href="{% url 'users:search' %}" class="nav-link {% block nav_search %}{% endblock %}" title="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </a>
+    <a href="/reels/" class="nav-link {% block nav_reels %}{% endblock %}" title="Reels">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>
+    </a>
+    <a href="/chats/" class="nav-link {% block nav_chats %}{% endblock %}" title="Messages">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    </a>
+    <a href="{% url 'users:profile' user.username %}" class="nav-link nav-avatar {% block nav_profile %}{% endblock %}" title="Profile">
+      {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="avatar" />
+      {% else %}
+        <span>{{ user.username|first|upper }}</span>
+      {% endif %}
+    </a>
+  </div>
+</nav>
+{% endif %}
+
+<main class="main-content {% if not user.is_authenticated %}auth-page{% endif %}">
+  {% if messages %}
+    <div class="toast-container">
+      {% for message in messages %}
+        <div class="toast toast-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<script src="{% static 'users/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -2,20 +2,20 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 
-# Load .env
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load .env from the project root.
+load_dotenv(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG") == "True"
+DEBUG = os.getenv("DEBUG", "False").strip().lower() in ("1", "true", "yes")
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+allowed_hosts_value = os.getenv("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_value.split(",") if host.strip()]
 
 
 # Application definition
@@ -27,9 +27,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'chats',
     'feed',
     'notifications',
-    
+    'posts',
+    'reels',
+    'users',
 ]
 
 
@@ -50,7 +53,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -63,7 +66,10 @@ TEMPLATES = [
 ]
 
 
-WSGI_APPLICATION = 'config.wsgi.application'DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+WSGI_APPLICATION = 'config.wsgi.application'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+AUTH_USER_MODEL = 'users.User'
 
 
 # Database

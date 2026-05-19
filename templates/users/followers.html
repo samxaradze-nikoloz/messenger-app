@@ -1,0 +1,43 @@
+{% extends 'users/base.html' %}
+{% block title %}{{ list_type }} — {{ profile_user.username }}{% endblock %}
+
+{% block content %}
+<div class="list-page">
+  <div class="list-header">
+    <a href="{% url 'users:profile' profile_user.username %}" class="back-btn">←</a>
+    <div>
+      <h2>{{ profile_user.username }}</h2>
+      <span class="list-type">{{ list_type }}</span>
+    </div>
+  </div>
+
+  <div class="users-list">
+    {% for u in users_list %}
+      <a href="{% url 'users:profile' u.username %}" class="user-row">
+        <div class="user-row-avatar">
+          {% if u.avatar %}
+            <img src="{{ u.avatar.url }}" alt="{{ u.username }}" />
+          {% else %}
+            <span>{{ u.username|first|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="user-row-info">
+          <strong>{{ u.username }}</strong>
+          <span>{{ u.get_full_name }}</span>
+        </div>
+        {% if u != request.user %}
+          <button class="btn-follow-sm {% if u.is_followed_by(request.user) %}following{% endif %}"
+                  data-username="{{ u.username }}"
+                  data-url="{% url 'users:follow_toggle' u.username %}">
+            {% if u.is_followed_by(request.user) %}Following{% else %}Follow{% endif %}
+          </button>
+        {% endif %}
+      </a>
+    {% empty %}
+      <div class="empty-state">
+        <p>No {{ list_type|lower }} yet</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

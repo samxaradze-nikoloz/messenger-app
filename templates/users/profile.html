@@ -1,0 +1,133 @@
+{% extends 'users/base.html' %}
+{% block title %}{{ profile_user.username }} — VIBE{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <div class="profile-header">
+    <div class="profile-avatar-wrap">
+      {% if profile_user.avatar %}
+        <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}" class="profile-avatar" />
+      {% else %}
+        <div class="profile-avatar-placeholder">{{ profile_user.username|first|upper }}</div>
+      {% endif %}
+    </div>
+
+    <div class="profile-info">
+      <div class="profile-top-row">
+        <h1 class="profile-username">{{ profile_user.username }}</h1>
+        {% if is_own_profile %}
+          <a href="{% url 'users:edit_profile' %}" class="btn-outline">Edit Profile</a>
+        {% else %}
+          <button
+            class="btn-follow {% if is_following %}following{% elif has_pending %}pending{% endif %}"
+            data-username="{{ profile_user.username }}"
+            data-url="{% url 'users:follow_toggle' profile_user.username %}"
+          >
+            {% if is_following %}Following{% elif has_pending %}Requested{% else %}Follow{% endif %}
+          </button>
+        {% endif %}
+      </div>
+
+      <div class="profile-stats">
+        <div class="stat">
+          <span class="stat-num">{{ posts_count }}</span>
+          <span class="stat-label">posts</span>
+        </div>
+        <a href="{% url 'users:followers' profile_user.username %}" class="stat">
+          <span class="stat-num">{{ followers_count }}</span>
+          <span class="stat-label">followers</span>
+        </a>
+        <a href="{% url 'users:following' profile_user.username %}" class="stat">
+          <span class="stat-num">{{ following_count }}</span>
+          <span class="stat-label">following</span>
+        </a>
+      </div>
+
+      <div class="profile-bio">
+        {% if profile_user.get_full_name %}
+          <strong class="profile-name">{{ profile_user.get_full_name }}</strong>
+        {% endif %}
+        {% if profile_user.bio %}
+          <p>{{ profile_user.bio }}</p>
+        {% endif %}
+        {% if profile_user.website %}
+          <a href="{{ profile_user.website }}" class="profile-website" target="_blank" rel="noopener">
+            {{ profile_user.website|cut:"https://"|cut:"http://" }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Posts Grid -->
+  {% if show_posts %}
+    {% if posts %}
+      <div class="posts-grid">
+        {% for post in posts %}
+          <a href="/posts/{{ post.id }}/" class="post-thumb">
+            {% if post.image %}
+              <img src="{{ post.image.url }}" alt="post" />
+            {% else %}
+              <div class="post-thumb-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              </div>
+            {% endif %}
+            <div class="post-thumb-overlay">
+              <span>♥ {{ post.likes.count }}</span>
+              <span>💬 {{ post.comments.count }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </div>
+        <h3>No posts yet</h3>
+        {% if is_own_profile %}
+          <p>Share your first moment</p>
+          <a href="/posts/create/" class="btn-primary">Create Post</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <div class="private-state">
+      <div class="lock-icon">🔒</div>
+      <h3>This account is private</h3>
+      <p>Follow to see their posts</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.btn-follow').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const res = await fetch(btn.dataset.url, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCookie('csrftoken')}
+    });
+    const data = await res.json();
+    if (data.action === 'followed') {
+      btn.textContent = 'Following';
+      btn.classList.add('following');
+    } else if (data.action === 'requested') {
+      btn.textContent = 'Requested';
+      btn.classList.add('pending');
+    } else {
+      btn.textContent = 'Follow';
+      btn.classList.remove('following', 'pending');
+    }
+  });
+});
+function getCookie(name) {
+  return document.cookie.split(';').map(c => c.trim())
+    .find(c => c.startsWith(name + '='))?.split('=')[1] ?? '';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'users/base.html' %}
+{% block title %}Search — VIBE{% endblock %}
+{% block nav_search %}active{% endblock %}
+
+{% block content %}
+<div class="search-page">
+  <div class="search-bar-wrap">
+    <form method="get" class="search-form">
+      <div class="search-input-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          name="q"
+          value="{{ query }}"
+          placeholder="Search people..."
+          autofocus
+          class="search-input"
+        />
+      </div>
+    </form>
+  </div>
+
+  {% if query %}
+    <div class="search-results">
+      {% if results %}
+        <p class="results-label">Results for "{{ query }}"</p>
+        {% for u in results %}
+          <a href="{% url 'users:profile' u.username %}" class="user-row">
+            <div class="user-row-avatar">
+              {% if u.avatar %}
+                <img src="{{ u.avatar.url }}" alt="{{ u.username }}" />
+              {% else %}
+                <span>{{ u.username|first|upper }}</span>
+              {% endif %}
+            </div>
+            <div class="user-row-info">
+              <strong>{{ u.username }}</strong>
+              <span>{{ u.get_full_name }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <p>No results for "{{ query }}"</p>
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="search-empty">
+      <p>Search for people by username or name</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

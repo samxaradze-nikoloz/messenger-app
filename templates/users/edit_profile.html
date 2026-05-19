@@ -1,0 +1,82 @@
+{% extends 'users/base.html' %}
+{% block title %}Edit Profile — VIBE{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block content %}
+<div class="edit-profile-page">
+  <div class="edit-header">
+    <h2>Edit Profile</h2>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="edit-form">
+    {% csrf_token %}
+
+    <div class="edit-avatar-section">
+      {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" class="edit-avatar-preview" id="avatarPreview" />
+      {% else %}
+        <div class="edit-avatar-placeholder" id="avatarPreview">{{ user.username|first|upper }}</div>
+      {% endif %}
+      <label class="avatar-upload-btn">
+        Change photo
+        <input type="file" name="avatar" accept="image/*" id="avatarInput" hidden />
+      </label>
+    </div>
+
+    <div class="edit-fields">
+      <div class="edit-field">
+        <label>Full Name</label>
+        <input type="text" name="full_name" value="{{ form.full_name.value|default:'' }}" placeholder="Your name" />
+      </div>
+      <div class="edit-field">
+        <label>Username</label>
+        <input type="text" value="{{ user.username }}" disabled class="disabled-input" />
+      </div>
+      <div class="edit-field">
+        <label>Bio</label>
+        <textarea name="bio" rows="3" placeholder="Tell people about yourself">{{ form.bio.value|default:'' }}</textarea>
+      </div>
+      <div class="edit-field">
+        <label>Website</label>
+        <input type="url" name="website" value="{{ form.website.value|default:'' }}" placeholder="https://yoursite.com" />
+      </div>
+      <div class="edit-field edit-field-toggle">
+        <label>Private Account</label>
+        <label class="toggle-switch">
+          <input type="checkbox" name="is_private" {% if user.is_private %}checked{% endif %} />
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="edit-actions">
+      <button type="submit" class="btn-primary">Save</button>
+      <a href="{% url 'users:profile' user.username %}" class="btn-ghost">Cancel</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('avatarInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('avatarPreview');
+    if (preview.tagName === 'IMG') {
+      preview.src = e.target.result;
+    } else {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'edit-avatar-preview';
+      img.id = 'avatarPreview';
+      preview.replaceWith(img);
+    }
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+{% endblock %}
