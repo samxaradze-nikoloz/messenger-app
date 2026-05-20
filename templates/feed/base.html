@@ -22,10 +22,10 @@
     <a href="{% url 'users:search' %}" class="nav-link {% block nav_search %}{% endblock %}" title="Search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     </a>
-    <a href="/reels/" class="nav-link {% block nav_reels %}{% endblock %}" title="Reels">
+    <a href="{% url 'reels:home' %}" class="nav-link {% block nav_reels %}{% endblock %}" title="Reels">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>
     </a>
-    <a href="/chats/" class="nav-link {% block nav_chats %}{% endblock %}" title="Messages">
+    <a href="{% url 'chats:home' %}" class="nav-link {% block nav_chats %}{% endblock %}" title="Messages">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
     </a>
     <a href="{% url 'users:profile' user.username %}" class="nav-link nav-avatar {% block nav_profile %}{% endblock %}" title="Profile">

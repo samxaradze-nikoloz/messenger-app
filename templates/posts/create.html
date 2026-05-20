@@ -1,0 +1,237 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}New Post — VIBE{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'posts/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="create-page">
+
+  <div class="create-header">
+    <a href="javascript:history.back()" class="back-btn">←</a>
+    <h2>New Post</h2>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" id="createForm" class="create-form">
+    {% csrf_token %}
+
+    <!-- ── Step 1: Drop / pick images ── -->
+    <div class="create-steps">
+
+      <div class="step" id="stepMedia">
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-inner" id="dropInner">
+            <div class="drop-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+            </div>
+            <p class="drop-title">Drag photos here</p>
+            <p class="drop-hint">JPG, PNG, WEBP — up to 10 images</p>
+            <label class="drop-select-btn">
+              Select from device
+              <input type="file" name="images" id="imageInput" accept="image/*" multiple hidden />
+            </label>
+          </div>
+          <div class="preview-wrap" id="previewWrap" style="display:none">
+            <div class="preview-main" id="previewMain"></div>
+            <div class="preview-strip" id="previewStrip"></div>
+            <button type="button" class="add-more-btn" id="addMoreBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
+              Add more
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Caption & meta ── -->
+      <div class="create-side" id="createSide">
+
+        <div class="caption-box">
+          <div class="caption-author-row">
+            {% if request.user.avatar %}
+              <img src="{{ request.user.avatar.url }}" class="cap-av" />
+            {% else %}
+              <div class="cap-av-ph">{{ request.user.username|first|upper }}</div>
+            {% endif %}
+            <span class="cap-username">{{ request.user.username }}</span>
+          </div>
+          <textarea
+            name="caption"
+            id="captionInput"
+            placeholder="Write a caption…"
+            maxlength="2200"
+            rows="5"
+            class="cap-textarea"
+          >{{ form.caption.value|default:'' }}</textarea>
+          <div class="cap-count"><span id="capCount">0</span> / 2200</div>
+        </div>
+
+        <div class="create-options-list">
+          <div class="create-option">
+            <span class="co-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <span>Add location</span>
+            <span class="co-arrow">›</span>
+          </div>
+          <div class="create-option">
+            <span class="co-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.58-7 8-7s8 3 8 7"/></svg>
+            </span>
+            <span>Tag people</span>
+            <span class="co-arrow">›</span>
+          </div>
+        </div>
+
+        {% if form.errors %}
+          <div class="create-error">
+            {% for field, errors in form.errors.items %}
+              {% for e in errors %}<p>{{ e }}</p>{% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <button type="submit" class="share-btn" id="shareBtn" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Share Post
+        </button>
+
+        <a href="javascript:history.back()" class="discard-btn">Discard</a>
+      </div>
+
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'posts/main.js' %}"></script>
+<script>
+// ── Image picker & previews ────────────────────────────────────
+const input     = document.getElementById('imageInput');
+const dropZone  = document.getElementById('dropZone');
+const dropInner = document.getElementById('dropInner');
+const previewWrap  = document.getElementById('previewWrap');
+const previewMain  = document.getElementById('previewMain');
+const previewStrip = document.getElementById('previewStrip');
+const shareBtn  = document.getElementById('shareBtn');
+const capInput  = document.getElementById('captionInput');
+const capCount  = document.getElementById('capCount');
+
+let files = [];
+let activeIdx = 0;
+
+capInput.addEventListener('input', () => capCount.textContent = capInput.value.length);
+
+function dt(arr) {
+  const d = new DataTransfer();
+  arr.forEach(f => d.items.add(f));
+  return d;
+}
+
+function renderPreviews() {
+  previewMain.innerHTML  = '';
+  previewStrip.innerHTML = '';
+
+  if (!files.length) {
+    previewWrap.style.display = 'none';
+    dropInner.style.display   = 'flex';
+    shareBtn.disabled = true;
+    return;
+  }
+  dropInner.style.display   = 'none';
+  previewWrap.style.display = 'flex';
+  shareBtn.disabled = false;
+
+  // Main large preview
+  const mainReader = new FileReader();
+  mainReader.onload = e => {
+    previewMain.innerHTML = `<img src="${e.target.result}" /><div class="pm-overlay"><span class="pm-count">${files.length} photo${files.length>1?'s':''}</span></div>`;
+  };
+  mainReader.readAsDataURL(files[activeIdx]);
+
+  // Strip thumbnails
+  files.forEach((f, i) => {
+    const r = new FileReader();
+    r.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'strip-thumb' + (i === activeIdx ? ' active' : '');
+      div.dataset.idx = i;
+      div.innerHTML = `<img src="${e.target.result}" /><button class="strip-remove" data-idx="${i}" type="button">✕</button>`;
+      div.addEventListener('click', ev => {
+        if (ev.target.closest('.strip-remove')) return;
+        activeIdx = i;
+        renderPreviews();
+      });
+      previewStrip.appendChild(div);
+    };
+    r.readAsDataURL(f);
+  });
+
+  // Sync to real input
+  input.files = dt(files).files;
+}
+
+previewStrip.addEventListener('click', e => {
+  const btn = e.target.closest('.strip-remove');
+  if (!btn) return;
+  const idx = parseInt(btn.dataset.idx);
+  files.splice(idx, 1);
+  activeIdx = Math.min(activeIdx, files.length - 1);
+  renderPreviews();
+});
+
+input.addEventListener('change', () => {
+  files = [...files, ...Array.from(input.files)].slice(0, 10);
+  renderPreviews();
+});
+
+document.getElementById('addMoreBtn').addEventListener('click', () => input.click());
+
+// Drag & drop
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const dropped = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  files = [...files, ...dropped].slice(0, 10);
+  renderPreviews();
+});
+const createForm = document.getElementById('createForm');
+createForm.addEventListener('submit', async e => {
+  if (!files.length) return;
+
+  const inputFiles = input.files || [];
+  const fileMismatch = inputFiles.length !== files.length || files.some((f, i) => inputFiles[i] !== f);
+  if (!fileMismatch) return;
+
+  e.preventDefault();
+  const fd = new FormData();
+  const originalData = new FormData(createForm);
+  for (const [name, value] of originalData.entries()) {
+    if (name === 'images') continue;
+    fd.append(name, value);
+  }
+  files.forEach(file => fd.append('images', file));
+
+  const response = await fetch(createForm.action || window.location.href, {
+    method: 'POST',
+    headers: {'X-CSRFToken': getCookie('csrftoken')},
+    body: fd,
+    redirect: 'manual',
+  });
+
+  if (response.status === 302 || response.status === 303) {
+    const redirectUrl = response.headers.get('Location');
+    window.location = redirectUrl || window.location.href;
+  } else {
+    const html = await response.text();
+    document.open();
+    document.write(html);
+    document.close();
+  }
+});</script>
+{% endblock %}

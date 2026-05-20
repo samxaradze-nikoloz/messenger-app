@@ -50,8 +50,9 @@
     </div>
 
     <div class="edit-actions">
-      <button type="submit" class="btn-primary">Save</button>
-      <a href="{% url 'users:profile' user.username %}" class="btn-ghost">Cancel</a>
+      <a href="{% url 'users:logout' %}" class="btn-outline btn-sm">Logout</a>
+      <a href="{% url 'users:profile' user.username %}" class="btn-ghost btn-sm">Cancel</a>
+      <button type="submit" class="btn-primary btn-sm">Save changes</button>
     </div>
   </form>
 </div>

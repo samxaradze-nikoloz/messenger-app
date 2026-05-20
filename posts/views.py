@@ -20,7 +20,7 @@ def create_post_view(request):
             for idx, img in enumerate(images):
                 PostImage.objects.create(post=post, image=img, order=idx)
 
-            return redirect('posts:detail', pk=post.pk)
+            return redirect('users:feed')
     else:
         form = PostCreateForm()
     return render(request, 'posts/create.html', {'form': form})

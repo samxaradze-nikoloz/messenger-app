@@ -19,12 +19,10 @@ def feed_view(request):
     ).values_list('following_id', flat=True)
 
     if tab == 'following':
-        if following_ids:
-            posts = Post.objects.filter(
-                author_id__in=following_ids
-            ).select_related('author').prefetch_related('images', 'likes', 'comments')
-        else:
-            posts = Post.objects.none()
+        author_ids = list(following_ids) + [request.user.id]
+        posts = Post.objects.filter(
+            author_id__in=author_ids
+        ).select_related('author').prefetch_related('images', 'likes', 'comments')
     else:
         # "For You" — posts from everyone except self, ordered by likes
         posts = Post.objects.exclude(

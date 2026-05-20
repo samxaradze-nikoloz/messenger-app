@@ -1,0 +1,44 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}Your Posts — VIBE{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'users/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+  <div class="page-heading">
+    <h1>Your Posts</h1>
+    <a href="{% url 'posts:create' %}" class="btn-primary btn-sm">New Post</a>
+  </div>
+
+  {% if posts %}
+    <div class="posts-grid">
+      {% for post in posts %}
+        <a href="{% url 'posts:detail' post.pk %}" class="post-thumb">
+          {% with first=post.images.first %}
+            {% if first %}
+              <img src="{{ first.image.url }}" alt="Post image" />
+            {% else %}
+              <div class="post-thumb-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              </div>
+            {% endif %}
+          {% endwith %}
+          <div class="post-thumb-overlay">
+            <span>♥ {{ post.get_likes_count }}</span>
+            <span>💬 {{ post.get_comments_count }}</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+      <h3>No posts yet</h3>
+      <p>Share your first moment.</p>
+      <a href="{% url 'posts:create' %}" class="btn-primary">Create Post</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

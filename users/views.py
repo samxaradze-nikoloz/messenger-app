@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from feed.views import feed_view as feed_app_view
 from .models import User, Follow
 from .forms import RegisterForm, LoginForm, ProfileEditForm
 
@@ -12,11 +13,6 @@ def home_view(request):
     if request.user.is_authenticated:
         return redirect('users:feed')
     return redirect('users:login')
-
-
-@login_required
-def feed_view(request):
-    return render(request, 'users/feed.html')
 
 
 def register_view(request):
@@ -157,3 +153,14 @@ def search_view(request):
                   User.objects.filter(last_name__icontains=q)
         results = results.distinct()
     return render(request, 'users/search.html', {'results': results, 'query': q})
+
+
+@login_required
+def feed_view(request):
+    return feed_app_view(request)
+
+
+@login_required
+def my_posts_view(request):
+    posts = request.user.posts.all().prefetch_related('images')
+    return render(request, 'users/my_posts.html', {'posts': posts})

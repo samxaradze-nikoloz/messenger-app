@@ -1,0 +1,55 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}Saved — VIBE{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'posts/main.css' %}">{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block content %}
+<div class="saved-page">
+  <div class="saved-header">
+    <a href="{% url 'users:profile' request.user.username %}" class="back-btn">←</a>
+    <h2>Saved</h2>
+    <span class="saved-count">{{ posts.count }} post{{ posts.count|pluralize }}</span>
+  </div>
+
+  {% if posts %}
+    <div class="saved-grid">
+      {% for post in posts %}
+        <a href="{% url 'posts:detail' post.pk %}" class="saved-thumb">
+          {% if post.images.first %}
+            <img src="{{ post.images.first.image.url }}" alt="saved post" loading="lazy" />
+          {% else %}
+            <div class="saved-thumb-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            </div>
+          {% endif %}
+          {% if post.images.count > 1 %}
+            <div class="multi-badge">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><rect x="7" y="2" width="14" height="14" rx="2"/><rect x="3" y="8" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+          {% endif %}
+          <div class="saved-overlay">
+            <span>♥ {{ post.likes.count }}</span>
+          </div>
+          <div class="saved-author">
+            {% if post.author.avatar %}
+              <img src="{{ post.author.avatar.url }}" class="saved-author-av" />
+            {% else %}
+              <div class="saved-author-av-ph">{{ post.author.username|first|upper }}</div>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      </div>
+      <h3>Nothing saved yet</h3>
+      <p>Tap the bookmark on any post to save it here</p>
+      <a href="/" class="btn-primary" style="display:inline-block;width:auto;padding:12px 28px;text-decoration:none">Explore Feed</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

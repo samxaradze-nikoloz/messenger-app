@@ -18,7 +18,12 @@
       <div class="profile-top-row">
         <h1 class="profile-username">{{ profile_user.username }}</h1>
         {% if is_own_profile %}
-          <a href="{% url 'users:edit_profile' %}" class="btn-outline">Edit Profile</a>
+          <div class="profile-actions">
+            <a href="{% url 'posts:create' %}" class="btn-primary btn-sm">Create Post</a>
+           
+            <a href="{% url 'users:edit_profile' %}" class="btn-outline btn-sm">Edit Profile</a>
+           
+          </div>
         {% else %}
           <button
             class="btn-follow {% if is_following %}following{% elif has_pending %}pending{% endif %}"
@@ -66,14 +71,19 @@
     {% if posts %}
       <div class="posts-grid">
         {% for post in posts %}
-          <a href="/posts/{{ post.id }}/" class="post-thumb">
-            {% if post.image %}
-              <img src="{{ post.image.url }}" alt="post" />
-            {% else %}
-              <div class="post-thumb-empty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-              </div>
-            {% endif %}
+          <a href="{% url 'posts:detail' post.id %}" class="post-thumb">
+            {% with first_image=post.images.first %}
+              {% if first_image %}
+                <img src="{{ first_image.image.url }}" alt="post" />
+                {% if post.images.count > 1 %}
+                  <div class="post-thumb-count">+{{ post.images.count }}</div>
+                {% endif %}
+              {% else %}
+                <div class="post-thumb-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                </div>
+              {% endif %}
+            {% endwith %}
             <div class="post-thumb-overlay">
               <span>♥ {{ post.likes.count }}</span>
               <span>💬 {{ post.comments.count }}</span>
@@ -89,7 +99,7 @@
         <h3>No posts yet</h3>
         {% if is_own_profile %}
           <p>Share your first moment</p>
-          <a href="/posts/create/" class="btn-primary">Create Post</a>
+          <a href="{% url 'posts:create' %}" class="btn-primary">Create Post</a>
         {% endif %}
       </div>
     {% endif %}
