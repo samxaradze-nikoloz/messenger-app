@@ -13,26 +13,28 @@
 
   <div class="users-list">
     {% for u in users_list %}
-      <a href="{% url 'users:profile' u.username %}" class="user-row">
-        <div class="user-row-avatar">
-          {% if u.avatar %}
-            <img src="{{ u.avatar.url }}" alt="{{ u.username }}" />
-          {% else %}
-            <span>{{ u.username|first|upper }}</span>
-          {% endif %}
-        </div>
-        <div class="user-row-info">
-          <strong>{{ u.username }}</strong>
-          <span>{{ u.get_full_name }}</span>
-        </div>
+      <div class="user-row">
+        <a href="{% url 'users:profile' u.username %}" class="user-row-link">
+          <div class="user-row-avatar">
+            {% if u.avatar %}
+              <img src="{{ u.avatar.url }}" alt="{{ u.username }}" />
+            {% else %}
+              <span>{{ u.username|first|upper }}</span>
+            {% endif %}
+          </div>
+          <div class="user-row-info">
+            <strong>{{ u.username }}</strong>
+            <span>{{ u.get_full_name }}</span>
+          </div>
+        </a>
         {% if u != request.user %}
-          <button class="btn-follow-sm {% if u.is_followed_by(request.user) %}following{% endif %}"
+          <button type="button" class="btn-follow-sm {% if u.is_followed %}following{% endif %}"
                   data-username="{{ u.username }}"
                   data-url="{% url 'users:follow_toggle' u.username %}">
-            {% if u.is_followed_by(request.user) %}Following{% else %}Follow{% endif %}
+            {% if u.is_followed %}Following{% else %}Follow{% endif %}
           </button>
         {% endif %}
-      </a>
+      </div>
     {% empty %}
       <div class="empty-state">
         <p>No {{ list_type|lower }} yet</p>
