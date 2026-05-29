@@ -1,2 +1,25 @@
 /* notifications/main.css */
-:root{--bg:#0a0a0a;--bg-2:#111;--bg-3:#1a1a1a;--border:#242424;--text:#f0ede8;--text-muted:#7a7672;--accent:#e8d5b0;--accent-2:#c4a882;--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;}
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bd:#242424;--t:#f0ede8;--m:#7a7672;--a:#e8d5b0;--a2:#c4a882;--fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;}
+.notifs-page{max-width:600px;margin:0 auto;padding:32px 20px}
+.notifs-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.notifs-header h2{font-family:var(--fd);font-size:22px;font-weight:700}
+.notifs-clear-btn{background:none;border:1px solid var(--bd);border-radius:8px;color:var(--m);font-size:12px;padding:6px 14px;cursor:pointer;transition:border-color .2s,color .2s}
+.notifs-clear-btn:hover{border-color:var(--a);color:var(--t)}
+.notifs-list{display:flex;flex-direction:column}
+.notif-row{display:flex;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid var(--bd);border-radius:10px;transition:background .15s;position:relative;text-decoration:none;color:var(--t)}
+.notif-row:hover{background:var(--bg3)}
+.notif-row.unread{background:rgba(232,213,176,.04)}
+.notif-sender-av{width:46px;height:46px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:700;color:var(--a);flex-shrink:0;position:relative;overflow:visible}
+.notif-sender-av img{width:46px;height:46px;border-radius:50%;object-fit:cover}
+.notif-sender-av span{font-size:16px}
+.notif-type-badge{position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;background:var(--bg2);border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:13px;line-height:1.5;color:var(--t);margin-bottom:2px}
+.notif-text strong{font-weight:600}
+.notif-extra{color:var(--m);font-style:italic}
+.notif-time{font-size:11px;color:var(--m)}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--a);flex-shrink:0}
+.notifs-empty{text-align:center;padding:80px 20px;color:var(--m)}
+.notifs-empty-icon{font-size:48px;margin-bottom:16px}
+.notifs-empty h3{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--t);margin-bottom:8px}
+.notifs-empty p{font-size:14px}

@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     'posts',
     'reels',
     'users',
-]
+    'channels',
+ ] 
 
 
 MIDDLEWARE = [
@@ -64,9 +65,10 @@ TEMPLATES = [
         },
     },
 ]
+ASGI_APPLICATION = 'config.asgi.application'
 
 
-WSGI_APPLICATION = 'config.wsgi.application'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
@@ -127,6 +129,25 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
+
+LOGIN_URL          = '/users/login/'
+LOGIN_REDIRECT_URL = '/'
+
+
+
 # Default primary key field type
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        # Dev — no Redis needed:
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+ 
+        # Production — uncomment and install channels-redis:
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {'hosts': [('127.0.0.1', 6379)]},
+    }
+}

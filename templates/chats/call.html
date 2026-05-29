@@ -1,0 +1,137 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}{{ call_type|capfirst }} Call — VIBE{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'chats/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="call-page">
+  <!-- Remote video / avatar -->
+  <div class="call-remote" id="callRemote">
+    {% if call_type == 'video' %}
+      <video id="remoteVideo" autoplay playsinline class="call-video"></video>
+    {% endif %}
+    <div class="call-remote-placeholder" id="remotePlaceholder">
+      {% if other_user %}
+        {% if other_user.avatar %}
+          <img src="{{ other_user.avatar.url }}" class="call-big-avatar" />
+        {% else %}
+          <div class="call-big-avatar-ph">{{ other_user.username|first|upper }}</div>
+        {% endif %}
+        <h2 class="call-name">{{ other_user.username }}</h2>
+        {% if chat.chat_type == 'group' %}
+          <h2 class="call-name">{{ chat.name }}</h2>
+        {% endif %}
+      {% else %}
+        <div class="call-big-avatar-ph">{{ chat.name|first|upper }}</div>
+        <h2 class="call-name">{{ chat.name }}</h2>
+      {% endif %}
+      <p class="call-status" id="callStatus">Calling…</p>
+    </div>
+  </div>
+
+  <!-- Local preview (video only) -->
+  {% if call_type == 'video' %}
+    <video id="localVideo" autoplay playsinline muted class="call-local-video"></video>
+  {% endif %}
+
+  <!-- Timer -->
+  <div class="call-timer" id="callTimer" style="display:none">00:00</div>
+
+  <!-- Controls -->
+  <div class="call-controls">
+    <button class="call-ctrl-btn" id="toggleMic" title="Mute">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+
+    {% if call_type == 'video' %}
+      <button class="call-ctrl-btn" id="toggleCam" title="Camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+    {% endif %}
+
+    <button class="call-ctrl-btn call-ctrl-end" id="endCallBtn" data-url="{% url 'chats:end_call' call.id %}" data-chat="{% url 'chats:room' chat.id %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.1 19.79 19.79 0 01.22 1.24 2 2 0 012 .05h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" transform="rotate(135 12 12)"/></svg>
+    </button>
+
+    <button class="call-ctrl-btn" id="toggleSpeaker" title="Speaker">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CALL_TYPE = '{{ call_type }}';
+const END_URL   = '{{ call.id }}';
+const CSRF      = '{{ csrf_token }}';
+const CHAT_URL  = "{% url 'chats:room' chat.id %}";
+const CALL_ID   = '{{ call.id }}';
+
+let localStream = null;
+let timerInterval = null;
+let seconds = 0;
+let micOn = true, camOn = true, speakerOn = true;
+
+// Start media
+async function startMedia() {
+  try {
+    const constraints = CALL_TYPE === 'video'
+      ? { video: true, audio: true }
+      : { audio: true };
+    localStream = await navigator.mediaDevices.getUserMedia(constraints);
+    if (CALL_TYPE === 'video') {
+      document.getElementById('localVideo').srcObject = localStream;
+    }
+    document.getElementById('callStatus').textContent = 'Connected';
+    startTimer();
+    document.getElementById('callTimer').style.display = 'block';
+  } catch(e) {
+    document.getElementById('callStatus').textContent = 'Could not access camera/mic';
+  }
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    seconds++;
+    const m = String(Math.floor(seconds/60)).padStart(2,'0');
+    const s = String(seconds%60).padStart(2,'0');
+    document.getElementById('callTimer').textContent = `${m}:${s}`;
+  }, 1000);
+}
+
+// Toggle mic
+document.getElementById('toggleMic').addEventListener('click', function(){
+  micOn = !micOn;
+  localStream?.getAudioTracks().forEach(t => t.enabled = micOn);
+  this.classList.toggle('ctrl-off', !micOn);
+});
+
+// Toggle camera
+document.getElementById('toggleCam')?.addEventListener('click', function(){
+  camOn = !camOn;
+  localStream?.getVideoTracks().forEach(t => t.enabled = camOn);
+  this.classList.toggle('ctrl-off', !camOn);
+});
+
+// Speaker placeholder toggle
+document.getElementById('toggleSpeaker').addEventListener('click', function(){
+  speakerOn = !speakerOn;
+  this.classList.toggle('ctrl-off', !speakerOn);
+});
+
+// End call
+document.getElementById('endCallBtn').addEventListener('click', async function(){
+  clearInterval(timerInterval);
+  localStream?.getTracks().forEach(t => t.stop());
+  await fetch(`/chats/call/${CALL_ID}/end/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'status=answered'
+  });
+  window.location.href = CHAT_URL;
+});
+
+startMedia();
+</script>
+{% endblock %}

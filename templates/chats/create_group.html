@@ -1,0 +1,114 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}New Group — VIBE{% endblock %}
+{% block nav_chats %}active{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'chats/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="create-group-page">
+  <div class="cg-header">
+    <a href="{% url 'chats:list' %}" class="back-btn">←</a>
+    <h2>New Group</h2>
+  </div>
+
+  {% if error %}<div class="form-error-banner">{{ error }}</div>{% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="cg-form">
+    {% csrf_token %}
+
+    <!-- Group avatar + name -->
+    <div class="cg-identity">
+      <div class="cg-avatar-wrap">
+        <div class="cg-avatar-preview" id="cgAvatarPreview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="32" height="32"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <label class="cg-avatar-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 5v14M5 12h14"/></svg>
+          <input type="file" name="avatar" id="cgAvatarInput" accept="image/*" hidden />
+        </label>
+      </div>
+      <div class="cg-name-wrap">
+        <label class="cg-label">Group Name</label>
+        <input type="text" name="name" placeholder="e.g. Weekend crew" class="cg-input" required maxlength="100" />
+        <label class="cg-label" style="margin-top:12px">Description <span style="color:var(--text-muted)">(optional)</span></label>
+        <textarea name="description" placeholder="What's this group about?" class="cg-input cg-textarea" maxlength="300" rows="2"></textarea>
+      </div>
+    </div>
+
+    <!-- Member picker -->
+    <div class="cg-members-section">
+      <div class="cg-members-header">
+        <span class="cg-label">Add Members</span>
+        <span class="cg-selected-count" id="selectedCount">0 selected</span>
+      </div>
+      <div class="cg-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="15" height="15"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="memberSearch" placeholder="Search friends…" class="cg-search-input" />
+      </div>
+
+      <div class="cg-friends-list" id="friendsList">
+        {% for friend in friends %}
+          <label class="cg-friend-row" data-name="{{ friend.username|lower }} {{ friend.get_full_name|lower }}">
+            <input type="checkbox" name="members" value="{{ friend.pk }}" class="cg-checkbox" />
+            <div class="cg-friend-av">
+              {% if friend.avatar %}
+                <img src="{{ friend.avatar.url }}" />
+              {% else %}
+                {{ friend.username|first|upper }}
+              {% endif %}
+            </div>
+            <div class="cg-friend-info">
+              <strong>{{ friend.username }}</strong>
+              <span>{{ friend.get_full_name }}</span>
+            </div>
+            <div class="cg-check-indicator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </label>
+        {% empty %}
+          <div class="cg-no-friends">
+            <p>Add friends first to create a group</p>
+            <a href="{% url 'users:search' %}">Find people →</a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="cg-submit-btn" id="cgSubmit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Create Group
+    </button>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Avatar preview
+document.getElementById('cgAvatarInput').addEventListener('change', function(){
+  const file = this.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const p = document.getElementById('cgAvatarPreview');
+    p.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+  };
+  r.readAsDataURL(file);
+});
+
+// Member search filter
+document.getElementById('memberSearch').addEventListener('input', function(){
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.cg-friend-row').forEach(row => {
+    row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+  });
+});
+
+// Count selected
+document.querySelectorAll('.cg-checkbox').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const n = document.querySelectorAll('.cg-checkbox:checked').length;
+    document.getElementById('selectedCount').textContent = n + ' selected';
+  });
+});
+</script>
+{% endblock %}

@@ -2,9 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
-from django.db.models import Q
 from .models import Post, PostImage, Like, Save, Comment
 from .forms import PostCreateForm, CommentForm
+
+
+def _notify(recipient, sender, notif_type, text='', post_id=None, comment_id=None):
+    try:
+        from notifications.utils import notify
+        notify(recipient, sender, notif_type, text=text, post_id=post_id, comment_id=comment_id)
+    except Exception:
+        pass
 
 
 @login_required
@@ -15,12 +22,10 @@ def create_post_view(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-
             images = request.FILES.getlist('images')
             for idx, img in enumerate(images):
                 PostImage.objects.create(post=post, image=img, order=idx)
-
-            return redirect('users:feed')
+            return redirect('posts:detail', pk=post.pk)
     else:
         form = PostCreateForm()
     return render(request, 'posts/create.html', {'form': form})
@@ -30,14 +35,13 @@ def post_detail_view(request, pk):
     post = get_object_or_404(Post, pk=pk)
     comments = post.comments.filter(parent=None).select_related('author').prefetch_related('replies__author')
     comment_form = CommentForm()
-
     context = {
-        'post': post,
-        'comments': comments,
+        'post':         post,
+        'comments':     comments,
         'comment_form': comment_form,
-        'is_liked': post.is_liked_by(request.user),
-        'is_saved': post.is_saved_by(request.user),
-        'images': post.images.all(),
+        'is_liked':     post.is_liked_by(request.user),
+        'is_saved':     post.is_saved_by(request.user),
+        'images':       post.images.all(),
     }
     return render(request, 'posts/detail.html', context)
 
@@ -53,6 +57,7 @@ def like_toggle_view(request, pk):
     else:
         Like.objects.create(post=post, user=request.user)
         liked = True
+        _notify(post.author, request.user, 'like', post_id=post.id)
     return JsonResponse({'liked': liked, 'count': post.get_likes_count()})
 
 
@@ -77,28 +82,26 @@ def add_comment_view(request, pk):
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
-        comment.post = post
+        comment.post   = post
         comment.author = request.user
-
         parent_id = request.POST.get('parent_id')
         if parent_id:
             try:
                 comment.parent = Comment.objects.get(id=parent_id, post=post)
             except Comment.DoesNotExist:
                 pass
-
         comment.save()
-
+        _notify(post.author, request.user, 'comment',
+                text=comment.body[:80], post_id=post.id, comment_id=comment.id)
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
-                'id': str(comment.id),
-                'body': comment.body,
-                'author': comment.author.username,
-                'avatar': comment.author.avatar.url if comment.author.avatar else None,
+                'id':         str(comment.id),
+                'body':       comment.body,
+                'author':     comment.author.username,
+                'avatar':     comment.author.avatar.url if comment.author.avatar else None,
                 'created_at': comment.created_at.strftime('%b %d'),
-                'is_reply': comment.parent_id is not None,
+                'is_reply':   comment.parent_id is not None,
             })
-
     return redirect('posts:detail', pk=pk)
 
 

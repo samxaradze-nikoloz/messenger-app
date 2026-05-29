@@ -1,0 +1,128 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}{{ chat.name }} — Group Info{% endblock %}
+{% block nav_chats %}active{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'chats/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="group-info-page">
+  <div class="gi-header">
+    <a href="{% url 'chats:room' chat.id %}" class="back-btn">←</a>
+    <h2>Group Info</h2>
+  </div>
+
+  <!-- Group identity -->
+  <div class="gi-identity">
+    {% if chat.avatar %}
+      <img src="{{ chat.avatar.url }}" class="gi-avatar" />
+    {% else %}
+      <div class="gi-avatar-ph">{{ chat.name|first|upper }}</div>
+    {% endif %}
+    <h3 class="gi-name">{{ chat.name }}</h3>
+    {% if chat.description %}<p class="gi-desc">{{ chat.description }}</p>{% endif %}
+    <p class="gi-meta">{{ members.count }} members · Created by {{ chat.created_by.username }}</p>
+  </div>
+
+  <!-- Actions -->
+  <div class="gi-actions">
+    <a href="{% url 'chats:call' chat.id %}?type=audio" class="gi-action-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.1 19.79 19.79 0 01.22 1.24 2 2 0 012 .05h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      <span>Audio Call</span>
+    </a>
+    <a href="{% url 'chats:call' chat.id %}?type=video" class="gi-action-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      <span>Video Call</span>
+    </a>
+  </div>
+
+  <!-- Members -->
+  <div class="gi-section">
+    <div class="gi-section-header">
+      <span>Members ({{ members.count }})</span>
+      {% if is_admin %}
+        <button class="gi-add-btn" id="toggleAddMember">+ Add</button>
+      {% endif %}
+    </div>
+
+    {% if is_admin and addable %}
+      <div class="gi-add-panel" id="addPanel" style="display:none">
+        <div class="gi-add-search">
+          <input type="text" id="addSearch" placeholder="Search friends to add…" class="cg-search-input" />
+        </div>
+        {% for f in addable %}
+          <div class="gi-addable-row" data-name="{{ f.username|lower }}" data-uid="{{ f.pk }}">
+            <div class="cg-friend-av">
+              {% if f.avatar %}<img src="{{ f.avatar.url }}" />{% else %}{{ f.username|first|upper }}{% endif %}
+            </div>
+            <div class="cg-friend-info"><strong>{{ f.username }}</strong><span>{{ f.get_full_name }}</span></div>
+            <button class="gi-add-member-btn" data-url="{% url 'chats:add_member' chat.id %}" data-uid="{{ f.pk }}">Add</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% for m in members %}
+      <div class="gi-member-row">
+        <a href="{% url 'users:profile' m.user.username %}" class="gi-member-link">
+          {% if m.user.avatar %}
+            <img src="{{ m.user.avatar.url }}" class="gi-member-av" />
+          {% else %}
+            <div class="gi-member-av-ph">{{ m.user.username|first|upper }}</div>
+          {% endif %}
+          <div class="gi-member-info">
+            <strong>{{ m.user.username }}</strong>
+            {% if m.role == 'admin' %}<span class="gi-admin-badge">Admin</span>{% endif %}
+          </div>
+        </a>
+        {% if is_admin and m.user != request.user %}
+          <button class="gi-remove-btn"
+            data-url="{% url 'chats:remove_member' chat.id m.user.pk %}">
+            Remove
+          </button>
+        {% elif m.user == request.user %}
+          <button class="gi-remove-btn gi-leave-btn"
+            data-url="{% url 'chats:remove_member' chat.id m.user.pk %}">
+            Leave
+          </button>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(n){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n+'='))?.split('=')[1]??'';}
+
+document.getElementById('toggleAddMember')?.addEventListener('click',()=>{
+  const p = document.getElementById('addPanel');
+  p.style.display = p.style.display==='none'?'block':'none';
+});
+
+document.getElementById('addSearch')?.addEventListener('input',function(){
+  const q=this.value.toLowerCase();
+  document.querySelectorAll('.gi-addable-row').forEach(r=>{r.style.display=r.dataset.name.includes(q)?'':'none';});
+});
+
+document.querySelectorAll('.gi-add-member-btn').forEach(btn=>{
+  btn.addEventListener('click',async function(){
+    const res=await fetch(this.dataset.url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken'),'Content-Type':'application/x-www-form-urlencoded'},body:`user_id=${this.dataset.uid}`});
+    const d=await res.json();
+    if(d.status==='added'){this.textContent='Added';this.disabled=true;}
+  });
+});
+
+document.querySelectorAll('.gi-remove-btn').forEach(btn=>{
+  btn.addEventListener('click',async function(){
+    if(!confirm('Are you sure?')) return;
+    const res=await fetch(this.dataset.url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}});
+    const d=await res.json();
+    if(d.status==='removed'){
+      if(this.classList.contains('gi-leave-btn')) window.location='/chats/';
+      else this.closest('.gi-member-row').remove();
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -2,18 +2,18 @@
 {% load static %}
 {% block title %}Feed — VIBE{% endblock %}
 {% block nav_home %}active{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'feed/main.css' %}">{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'feed/main.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="feed-page">
 
-  <!-- Tab bar -->
   <div class="feed-tabs">
     <a href="?tab=following" class="feed-tab {% if tab == 'following' %}active{% endif %}">Following</a>
-    <a href="?tab=foryou" class="feed-tab {% if tab == 'foryou' %}active{% endif %}">For You</a>
+    <a href="?tab=foryou"    class="feed-tab {% if tab == 'foryou' %}active{% endif %}">For You</a>
   </div>
 
-  <!-- New post shortcut -->
   <div class="new-post-bar">
     {% if request.user.avatar %}
       <img src="{{ request.user.avatar.url }}" class="np-avatar" />
@@ -22,22 +22,17 @@
     {% endif %}
     <a href="{% url 'posts:create' %}" class="np-input">What's on your mind?</a>
     <a href="{% url 'posts:create' %}" class="np-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       Photo
-    </a>
-    <a href="{% url 'users:my_posts' %}" class="np-btn" style="margin-left: 8px;">
-      Your Posts
     </a>
   </div>
 
-  <!-- Posts -->
   <div class="feed-posts">
     {% if posts_data %}
       {% for item in posts_data %}
         {% with post=item.post images=item.images %}
         <article class="feed-card" id="post-{{ post.pk }}">
 
-          <!-- Card header -->
           <div class="feed-card-header">
             <a href="{% url 'users:profile' post.author.username %}" class="feed-author">
               {% if post.author.avatar %}
@@ -50,15 +45,14 @@
                 <span class="feed-time">{{ post.created_at|timesince }} ago</span>
               </div>
             </a>
-            <button class="feed-more-btn">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
-            </button>
+            <a href="{% url 'chats:start_dm' post.author.username %}" class="feed-dm-btn" title="Message">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </a>
           </div>
 
-          <!-- Images -->
           {% if images %}
             <div class="feed-images {% if images|length > 1 %}has-many{% endif %}">
-              <div class="feed-carousel" data-post="{{ post.pk }}">
+              <div class="feed-carousel">
                 {% for img in images %}
                   <div class="feed-slide {% if forloop.first %}active{% endif %}">
                     <img src="{{ img.image.url }}" alt="image" loading="lazy" />
@@ -77,17 +71,12 @@
             </div>
           {% endif %}
 
-          <!-- Actions row -->
           <div class="feed-actions">
             <div class="feed-action-left">
-              <button class="feed-action-btn feed-like
-                {% if item.is_liked %}liked{% endif %}"
-                data-url="{% url 'posts:like' post.pk %}"
-                data-post="{{ post.pk }}">
-                <svg viewBox="0 0 24 24"
-                     fill="{% if item.is_liked %}currentColor{% else %}none{% endif %}"
-                     stroke="currentColor" stroke-width="1.5"
-                     class="heart-svg">
+              <button class="feed-action-btn feed-like {% if item.is_liked %}liked{% endif %}"
+                data-url="{% url 'posts:like' post.pk %}">
+                <svg viewBox="0 0 24 24" fill="{% if item.is_liked %}currentColor{% else %}none{% endif %}"
+                     stroke="currentColor" stroke-width="1.5" class="heart-svg">
                   <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
                 </svg>
               </button>
@@ -95,19 +84,15 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
               </a>
             </div>
-            <button class="feed-action-btn feed-save
-              {% if item.is_saved %}saved{% endif %}"
+            <button class="feed-action-btn feed-save {% if item.is_saved %}saved{% endif %}"
               data-url="{% url 'posts:save' post.pk %}">
-              <svg viewBox="0 0 24 24"
-                   fill="{% if item.is_saved %}currentColor{% else %}none{% endif %}"
-                   stroke="currentColor" stroke-width="1.5"
-                   class="save-svg">
+              <svg viewBox="0 0 24 24" fill="{% if item.is_saved %}currentColor{% else %}none{% endif %}"
+                   stroke="currentColor" stroke-width="1.5" class="save-svg">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
               </svg>
             </button>
           </div>
 
-          <!-- Likes & caption -->
           <div class="feed-meta">
             <span class="feed-likes"><span class="lc">{{ post.get_likes_count }}</span> like{% if post.get_likes_count != 1 %}s{% endif %}</span>
             {% if post.caption %}
@@ -118,14 +103,11 @@
             {% endif %}
             {% with cnt=post.get_comments_count %}
               {% if cnt %}
-                <a href="{% url 'posts:detail' post.pk %}" class="view-comments">
-                  View all {{ cnt }} comment{% if cnt != 1 %}s{% endif %}
-                </a>
+                <a href="{% url 'posts:detail' post.pk %}" class="view-comments">View all {{ cnt }} comment{% if cnt != 1 %}s{% endif %}</a>
               {% endif %}
             {% endwith %}
           </div>
 
-          <!-- Quick comment -->
           <form class="quick-comment-form" data-url="{% url 'posts:comment' post.pk %}">
             {% csrf_token %}
             <input type="text" name="body" placeholder="Add a comment…" class="quick-comment-input" />
@@ -139,7 +121,7 @@
     {% elif tab == 'following' and not has_following %}
       <div class="feed-empty">
         <div class="feed-empty-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="52" height="52"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         </div>
         <h3>Follow people to see their posts</h3>
         <p>When you follow someone, their posts appear here</p>
@@ -148,76 +130,13 @@
     {% else %}
       <div class="feed-empty">
         <h3>Nothing here yet</h3>
-        <p>Be the first to post something</p>
         <a href="{% url 'posts:create' %}" class="btn-primary" style="display:inline-block;width:auto;padding:12px 28px">Create Post</a>
       </div>
     {% endif %}
   </div>
-
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'feed/main.js' %}"></script>
-<script>
-function getCookie(n){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n+'='))?.split('=')[1]??'';}
-
-// ── Feed carousels ────────────────────────────────────────────
-document.querySelectorAll('.feed-images').forEach(wrap => {
-  const slides = wrap.querySelectorAll('.feed-slide');
-  const dots   = wrap.querySelectorAll('.fc-dot');
-  let cur = 0;
-  function go(i) {
-    slides[cur].classList.remove('active'); dots[cur]?.classList.remove('active');
-    cur = (i + slides.length) % slides.length;
-    slides[cur].classList.add('active'); dots[cur]?.classList.add('active');
-  }
-  wrap.querySelector('.fc-prev')?.addEventListener('click', () => go(cur - 1));
-  wrap.querySelector('.fc-next')?.addEventListener('click', () => go(cur + 1));
-});
-
-// ── Like ─────────────────────────────────────────────────────
-document.querySelectorAll('.feed-like').forEach(btn => {
-  btn.addEventListener('click', async function() {
-    const res = await fetch(this.dataset.url, {method:'POST', headers:{'X-CSRFToken':getCookie('csrftoken')}});
-    const d = await res.json();
-    const svg = this.querySelector('.heart-svg');
-    if (d.liked) { this.classList.add('liked'); svg.setAttribute('fill','currentColor'); }
-    else         { this.classList.remove('liked'); svg.setAttribute('fill','none'); }
-    this.closest('.feed-card').querySelector('.lc').textContent = d.count;
-    this.classList.add('pop'); setTimeout(()=>this.classList.remove('pop'),300);
-  });
-  // Double-tap image to like
-  const card = btn.closest('.feed-card');
-  card?.querySelector('.feed-images')?.addEventListener('dblclick', () => btn.click());
-});
-
-// ── Save ─────────────────────────────────────────────────────
-document.querySelectorAll('.feed-save').forEach(btn => {
-  btn.addEventListener('click', async function() {
-    const res = await fetch(this.dataset.url, {method:'POST', headers:{'X-CSRFToken':getCookie('csrftoken')}});
-    const d = await res.json();
-    const svg = this.querySelector('.save-svg');
-    if (d.saved) { this.classList.add('saved'); svg.setAttribute('fill','currentColor'); }
-    else         { this.classList.remove('saved'); svg.setAttribute('fill','none'); }
-  });
-});
-
-// ── Quick comment ─────────────────────────────────────────────
-document.querySelectorAll('.quick-comment-form').forEach(form => {
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const input = form.querySelector('.quick-comment-input');
-    const body = input.value.trim();
-    if (!body) return;
-    const fd = new FormData(form);
-    await fetch(form.dataset.url, {
-      method:'POST',
-      headers:{'X-CSRFToken':getCookie('csrftoken'),'X-Requested-With':'XMLHttpRequest'},
-      body: fd
-    });
-    input.value = '';
-  });
-});
-</script>
 {% endblock %}

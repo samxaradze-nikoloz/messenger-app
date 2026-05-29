@@ -1,0 +1,60 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}Notifications — VIBE{% endblock %}
+{% block nav_notifs %}active{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'notifications/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="notifs-page">
+  <div class="notifs-header">
+    <h2>Notifications</h2>
+    {% if notifications %}
+      <form method="post" action="{% url 'notifications:clear' %}">
+        {% csrf_token %}
+        <button type="submit" class="notifs-clear-btn">Clear all</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="notifs-list">
+    {% for n in notifications %}
+      <a href="{{ n.get_url }}" class="notif-row {% if not n.is_read %}unread{% endif %}">
+        <div class="notif-sender-av">
+          {% if n.sender and n.sender.avatar %}
+            <img src="{{ n.sender.avatar.url }}" />
+          {% elif n.sender %}
+            <span>{{ n.sender.username|first|upper }}</span>
+          {% else %}
+            <span>🔔</span>
+          {% endif %}
+          <div class="notif-type-badge">{{ n.get_icon }}</div>
+        </div>
+
+        <div class="notif-body">
+          <p class="notif-text">
+            {% if n.sender %}<strong>{{ n.sender.username }}</strong> {% endif %}
+            {% if n.notif_type == 'like' %}liked your post{% endif %}
+            {% if n.notif_type == 'comment' %}commented on your post{% endif %}
+            {% if n.notif_type == 'follow' %}started following you{% endif %}
+            {% if n.notif_type == 'follow_request' %}requested to follow you{% endif %}
+            {% if n.notif_type == 'friend_request' %}sent you a friend request{% endif %}
+            {% if n.notif_type == 'mention' %}mentioned you in a comment{% endif %}
+            {% if n.notif_type == 'message' %}sent you a message{% endif %}
+            {% if n.notif_type == 'call' %}called you{% endif %}
+            {% if n.text %} — <span class="notif-extra">{{ n.text|truncatechars:60 }}</span>{% endif %}
+          </p>
+          <span class="notif-time">{{ n.created_at|timesince }} ago</span>
+        </div>
+
+        {% if not n.is_read %}<span class="notif-dot"></span>{% endif %}
+      </a>
+    {% empty %}
+      <div class="notifs-empty">
+        <div class="notifs-empty-icon">🔔</div>
+        <h3>All caught up</h3>
+        <p>You'll see likes, comments, follows and more here</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}Friends — VIBE{% endblock %}
+{% block nav_chats %}active{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'chats/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="friends-page">
+  <div class="friends-header">
+    <a href="{% url 'chats:list' %}" class="back-btn">←</a>
+    <h2>Friends</h2>
+  </div>
+
+  <!-- Friend Requests Received -->
+  {% if received %}
+  <div class="friends-section">
+    <h3 class="fs-title">Requests <span class="fs-count">{{ received.count }}</span></h3>
+    {% for req in received %}
+      <div class="fr-row" id="freq-{{ req.id }}">
+        <a href="{% url 'users:profile' req.from_user.username %}" class="fr-av-wrap">
+          {% if req.from_user.avatar %}
+            <img src="{{ req.from_user.avatar.url }}" class="fr-av" />
+          {% else %}
+            <div class="fr-av-ph">{{ req.from_user.username|first|upper }}</div>
+          {% endif %}
+        </a>
+        <div class="fr-info">
+          <strong>{{ req.from_user.username }}</strong>
+          <span>{{ req.from_user.get_full_name }}</span>
+        </div>
+        <div class="fr-actions">
+          <button class="fr-accept" data-url="{% url 'chats:friend_respond' req.id %}" data-id="{{ req.id }}">Accept</button>
+          <button class="fr-decline" data-url="{% url 'chats:friend_respond' req.id %}" data-id="{{ req.id }}">Decline</button>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Friends List -->
+  <div class="friends-section">
+    <h3 class="fs-title">Your Friends <span class="fs-count">{{ friends|length }}</span></h3>
+    {% for friend in friends %}
+      <div class="fr-row">
+        <a href="{% url 'users:profile' friend.username %}" class="fr-av-wrap">
+          {% if friend.avatar %}
+            <img src="{{ friend.avatar.url }}" class="fr-av" />
+          {% else %}
+            <div class="fr-av-ph">{{ friend.username|first|upper }}</div>
+          {% endif %}
+        </a>
+        <div class="fr-info">
+          <strong>{{ friend.username }}</strong>
+          <span>{{ friend.get_full_name }}</span>
+        </div>
+        <a href="{% url 'chats:start_dm' friend.username %}" class="fr-msg-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Message
+        </a>
+      </div>
+    {% empty %}
+      <div class="fs-empty">
+        <p>No friends yet. Find people to connect with!</p>
+        <a href="{% url 'users:search' %}" class="btn-outline">Search people</a>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Sent Requests -->
+  {% if sent %}
+  <div class="friends-section">
+    <h3 class="fs-title">Sent Requests <span class="fs-count">{{ sent.count }}</span></h3>
+    {% for req in sent %}
+      <div class="fr-row">
+        <a href="{% url 'users:profile' req.to_user.username %}" class="fr-av-wrap">
+          {% if req.to_user.avatar %}
+            <img src="{{ req.to_user.avatar.url }}" class="fr-av" />
+          {% else %}
+            <div class="fr-av-ph">{{ req.to_user.username|first|upper }}</div>
+          {% endif %}
+        </a>
+        <div class="fr-info">
+          <strong>{{ req.to_user.username }}</strong>
+          <span>{{ req.to_user.get_full_name }}</span>
+        </div>
+        <span class="fr-pending-badge">Pending</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(n){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n+'='))?.split('=')[1]??'';}
+
+document.querySelectorAll('.fr-accept, .fr-decline').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const action = this.classList.contains('fr-accept') ? 'accept' : 'decline';
+    const res = await fetch(this.dataset.url, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCookie('csrftoken'), 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `action=${action}`
+    });
+    const d = await res.json();
+    const row = document.getElementById(`freq-${this.dataset.id}`);
+    if (d.status === 'accepted') {
+      row.innerHTML = `<span style="color:var(--accent);font-size:13px;padding:12px 0">✓ Friend added — <a href="/chats/">Message them</a></span>`;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+});
+</script>
+{% endblock %}
