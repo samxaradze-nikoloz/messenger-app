@@ -324,6 +324,7 @@ def call_view(request, chat_id):
         other_user = chat.members.exclude(pk=request.user.pk).first()
 
     return render(request, 'chats/call.html', {
+        'is_initiator': True,
         'chat':       chat,
         'call':       call,
         'call_type':  call_type,
