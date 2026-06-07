@@ -1,0 +1,161 @@
+{% extends 'users/base.html' %}
+{% load static %}
+{% block title %}{{ reel.author.username }}'s reel — VIBE{% endblock %}
+{% block nav_reels %}active{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'reels/main.css' %}">{% endblock %}
+
+{% block content %}
+<div class="reel-detail-page">
+
+  <!-- Video panel -->
+  <div class="reel-detail-video-wrap">
+    <video class="reel-detail-video" controls loop
+      {% if reel.thumbnail %}poster="{{ reel.thumbnail.url }}"{% endif %}>
+      <source src="{{ reel.video.url }}" />
+    </video>
+  </div>
+
+  <!-- Info panel -->
+  <div class="reel-detail-panel">
+
+    <div class="reel-detail-header">
+      <a href="{% url 'users:profile' reel.author.username %}" class="reel-detail-author">
+        {% if reel.author.avatar %}
+          <img src="{{ reel.author.avatar.url }}" class="reel-detail-av" />
+        {% else %}
+          <div class="reel-detail-av-ph">{{ reel.author.username|first|upper }}</div>
+        {% endif %}
+        <span>{{ reel.author.username }}</span>
+      </a>
+      {% if reel.author == request.user %}
+        <form method="post" action="{% url 'reels:delete' reel.pk %}" style="margin-left:auto">
+          {% csrf_token %}
+          <button type="submit" class="reel-delete-btn" onclick="return confirm('Delete reel?')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    {% if reel.caption %}
+      <p class="reel-detail-caption">{{ reel.caption }}</p>
+    {% endif %}
+    {% if reel.audio_name %}
+      <div class="reel-audio-line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        {{ reel.audio_name }}
+      </div>
+    {% endif %}
+    <p class="reel-detail-time">{{ reel.created_at|timesince }} ago</p>
+
+    <!-- Action row -->
+    <div class="reel-detail-actions">
+      <button class="reel-det-action reel-like {% if is_liked %}liked{% endif %}"
+        data-url="{% url 'reels:like' reel.pk %}">
+        <svg viewBox="0 0 24 24" fill="{% if is_liked %}currentColor{% else %}none{% endif %}"
+             stroke="currentColor" stroke-width="1.5" width="22" height="22" class="heart-svg">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+        </svg>
+        <span id="likeCount">{{ reel.get_likes_count }}</span>
+      </button>
+
+      <button class="reel-det-action reel-save {% if is_saved %}saved{% endif %}"
+        data-url="{% url 'reels:save' reel.pk %}">
+        <svg viewBox="0 0 24 24" fill="{% if is_saved %}currentColor{% else %}none{% endif %}"
+             stroke="currentColor" stroke-width="1.5" width="22" height="22" class="save-svg">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+        </svg>
+        Save
+      </button>
+
+      <button class="reel-det-action reel-repost {% if is_reposted %}reposted{% endif %}"
+        data-url="{% url 'reels:repost' reel.pk %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+        {% if is_reposted %}Reposted{% else %}Repost{% endif %}
+      </button>
+    </div>
+
+    <!-- Comments -->
+    <div class="reel-detail-comments" id="reelComments">
+      {% for c in comments %}
+        <div class="reel-comment">
+          <div class="reel-comment-av">
+            {% if c.author.avatar %}<img src="{{ c.author.avatar.url }}" />
+            {% else %}<span>{{ c.author.username|first|upper }}</span>{% endif %}
+          </div>
+          <div class="reel-comment-body">
+            <span class="reel-comment-un">{{ c.author.username }}</span>
+            {{ c.body }}
+            <span class="reel-comment-time">{{ c.created_at|timesince }} ago</span>
+          </div>
+        </div>
+      {% empty %}
+        <div class="reel-no-comments" id="noComments">No comments yet</div>
+      {% endfor %}
+    </div>
+
+    <!-- Comment input -->
+    {% if request.user.is_authenticated %}
+      <form class="reel-comment-form" id="reelCommentForm" data-url="{% url 'reels:comment' reel.pk %}">
+        {% csrf_token %}
+        <input type="text" name="body" id="reelCommentInput" placeholder="Add a comment…" class="reel-comment-input" />
+        <button type="submit" class="reel-comment-submit">Post</button>
+      </form>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(n){return document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(n+'='))?.split('=')[1]??'';}
+
+// Like
+document.querySelector('.reel-like')?.addEventListener('click', async function(){
+  const res  = await fetch(this.dataset.url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}});
+  const d    = await res.json();
+  const svg  = this.querySelector('.heart-svg');
+  this.classList.toggle('liked', d.liked);
+  svg.setAttribute('fill', d.liked ? 'currentColor' : 'none');
+  document.getElementById('likeCount').textContent = d.count;
+});
+
+// Save
+document.querySelector('.reel-save')?.addEventListener('click', async function(){
+  const res = await fetch(this.dataset.url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}});
+  const d   = await res.json();
+  const svg = this.querySelector('.save-svg');
+  this.classList.toggle('saved', d.saved);
+  svg.setAttribute('fill', d.saved ? 'currentColor' : 'none');
+  this.childNodes[this.childNodes.length-1].textContent = d.saved ? ' Saved' : ' Save';
+});
+
+// Repost
+document.querySelector('.reel-repost')?.addEventListener('click', async function(){
+  const res = await fetch(this.dataset.url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')}});
+  const d   = await res.json();
+  this.classList.toggle('reposted', d.reposted);
+  this.childNodes[this.childNodes.length-1].textContent = d.reposted ? ' Reposted' : ' Repost';
+});
+
+// Comment
+document.getElementById('reelCommentForm')?.addEventListener('submit', async function(e){
+  e.preventDefault();
+  const input = document.getElementById('reelCommentInput');
+  const body  = input.value.trim(); if(!body) return;
+  const fd = new FormData(this);
+  const res = await fetch(this.dataset.url,{method:'POST',headers:{'X-CSRFToken':getCookie('csrftoken')},body:fd});
+  const d = await res.json();
+  if(d.id){
+    document.getElementById('noComments')?.remove();
+    const area = document.getElementById('reelComments');
+    const div  = document.createElement('div'); div.className='reel-comment';
+    const avHtml = d.avatar ? `<img src="${d.avatar}" />` : `<span>${d.author[0].toUpperCase()}</span>`;
+    div.innerHTML = `<div class="reel-comment-av">${avHtml}</div><div class="reel-comment-body"><span class="reel-comment-un">${d.author}</span> ${d.body}<span class="reel-comment-time">just now</span></div>`;
+    area.appendChild(div);
+    input.value = '';
+  }
+});
+</script>
+{% endblock %}
