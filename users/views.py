@@ -80,6 +80,20 @@ def profile_view(request, username):
     posts = profile_user.posts.prefetch_related(
         'images', 'likes', 'comments'
     ).order_by('-created_at') if show_posts else []
+    
+    # Fetch reels
+    own_reels = profile_user.reels.order_by('-created_at') if show_posts else []
+    
+    # Fetch reposted reels
+    reposted_reels = []
+    if show_posts:
+        try:
+            from reels.models import ReelRepost
+            reposted_reels = ReelRepost.objects.filter(
+                user=profile_user
+            ).select_related('reel', 'reel__author').order_by('-created_at')
+        except Exception:
+            pass
 
     return render(request, 'users/profile.html', {
         'profile_user':         profile_user,
@@ -90,6 +104,8 @@ def profile_view(request, username):
         'friend_request_state': friend_request_state,
         'posts':                posts,
         'show_posts':           show_posts,
+        'own_reels':            own_reels,
+        'reposted_reels':       reposted_reels,
         'followers_count':      profile_user.get_followers_count(),
         'following_count':      profile_user.get_following_count(),
         'posts_count':          profile_user.get_posts_count(),

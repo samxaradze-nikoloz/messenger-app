@@ -9,23 +9,30 @@
   {% if reels_data %}
     {% for item in reels_data %}
       {% with reel=item.reel %}
-      <div class="reel-card" id="reel-{{ reel.pk }}" data-id="{{ reel.pk }}">
+      <div class="reel-card"
+           id="reel-{{ reel.pk }}"
+           data-id="{{ reel.pk }}"
+           data-ratio="{{ reel.ratio }}"
+           data-view-url="{% url 'reels:view' reel.pk %}">
 
         <!-- Video -->
-        <video class="reel-video" loop playsinline preload="none"
+        <video class="reel-video"
+               loop playsinline preload="none"
                data-src="{{ reel.video.url }}"
                {% if reel.thumbnail %}poster="{{ reel.thumbnail.url }}"{% endif %}>
         </video>
 
-        <!-- Tap to play/pause -->
-        <div class="reel-tap-overlay" onclick="togglePlay(this)"></div>
+        <!-- Tap overlay (single=play/pause, double=like) -->
+        <div class="reel-tap-overlay" id="tap-{{ reel.pk }}"></div>
 
-        <!-- Play icon shown when paused -->
-        <div class="reel-play-icon" style="display:none">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <!-- Pause icon -->
+        <div class="reel-play-icon" id="playicon-{{ reel.pk }}" style="display:none">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="56" height="56">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
         </div>
 
-        <!-- Left: author info + caption -->
+        <!-- Bottom-left: author + caption + audio -->
         <div class="reel-info">
           <a href="{% url 'users:profile' reel.author.username %}" class="reel-author">
             {% if reel.author.avatar %}
@@ -36,18 +43,20 @@
             <span class="reel-author-name">{{ reel.author.username }}</span>
             {% if reel.author != request.user %}
               <button class="reel-follow-btn"
-                data-url="{% url 'users:follow_toggle' reel.author.username %}"
-                data-following="{{ item.is_following|default:'false' }}">
+                      data-url="{% url 'users:follow_toggle' reel.author.username %}">
                 Follow
               </button>
             {% endif %}
           </a>
           {% if reel.caption %}
-            <p class="reel-caption">{{ reel.caption|truncatechars:100 }}</p>
+            <p class="reel-caption">{{ reel.caption|truncatechars:120 }}</p>
           {% endif %}
           {% if reel.audio_name %}
             <div class="reel-audio">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13">
+                <path d="M9 18V5l12-2v13"/>
+                <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+              </svg>
               {{ reel.audio_name }}
             </div>
           {% endif %}
@@ -55,38 +64,54 @@
 
         <!-- Right: action buttons -->
         <div class="reel-actions">
-          <!-- Like -->
+
           <button class="reel-action reel-like {% if item.is_liked %}liked{% endif %}"
-            data-url="{% url 'reels:like' reel.pk %}">
-            <svg viewBox="0 0 24 24" fill="{% if item.is_liked %}currentColor{% else %}none{% endif %}"
+                  data-url="{% url 'reels:like' reel.pk %}">
+            <svg viewBox="0 0 24 24"
+                 fill="{% if item.is_liked %}currentColor{% else %}none{% endif %}"
                  stroke="currentColor" stroke-width="1.5" width="26" height="26" class="heart-svg">
               <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
             </svg>
-            <span class="reel-action-count">{{ reel.get_likes_count }}</span>
+            <span class="reel-action-count like-count">{{ reel.get_likes_count }}</span>
           </button>
 
-          <!-- Comment -->
           <a href="{% url 'reels:detail' reel.pk %}" class="reel-action">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
             <span class="reel-action-count">{{ reel.get_comments_count }}</span>
           </a>
 
-          <!-- Save -->
           <button class="reel-action reel-save {% if item.is_saved %}saved{% endif %}"
-            data-url="{% url 'reels:save' reel.pk %}">
-            <svg viewBox="0 0 24 24" fill="{% if item.is_saved %}currentColor{% else %}none{% endif %}"
+                  data-url="{% url 'reels:save' reel.pk %}">
+            <svg viewBox="0 0 24 24"
+                 fill="{% if item.is_saved %}currentColor{% else %}none{% endif %}"
                  stroke="currentColor" stroke-width="1.5" width="26" height="26" class="save-svg">
               <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
             </svg>
           </button>
 
-          <!-- Repost -->
           <button class="reel-action reel-repost {% if item.is_reposted %}reposted{% endif %}"
-            data-url="{% url 'reels:repost' reel.pk %}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                  data-url="{% url 'reels:repost' reel.pk %}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26">
+              <polyline points="17 1 21 5 17 9"/>
+              <path d="M3 11V9a4 4 0 014-4h14"/>
+              <polyline points="7 23 3 19 7 15"/>
+              <path d="M21 13v2a4 4 0 01-4 4H3"/>
+            </svg>
           </button>
 
-          <!-- Author avatar (spinning disc) -->
+          <!-- Views -->
+          <div class="reel-action reel-views-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span class="reel-action-count view-count"
+                  id="views-{{ reel.pk }}">{{ reel.format_views }}</span>
+          </div>
+
+          <!-- Spinning disc -->
           <div class="reel-disc">
             {% if reel.author.avatar %}
               <img src="{{ reel.author.avatar.url }}" />
@@ -94,20 +119,28 @@
               <span>{{ reel.author.username|first|upper }}</span>
             {% endif %}
           </div>
+
         </div>
 
         <!-- Progress bar -->
-        <div class="reel-progress"><div class="reel-progress-bar"></div></div>
+        <div class="reel-progress">
+          <div class="reel-progress-bar" id="prog-{{ reel.pk }}"></div>
+        </div>
 
       </div>
       {% endwith %}
     {% endfor %}
+
   {% else %}
     <div class="reels-empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="60" height="60"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="60" height="60">
+        <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+        <path d="M7 2v20M17 2v20M2 12h20"/>
+      </svg>
       <h3>No reels yet</h3>
       <p>Be the first to share one</p>
-      <a href="{% url 'reels:create' %}" class="btn-primary" style="display:inline-block;width:auto;padding:12px 28px">Create Reel</a>
+      <a href="{% url 'reels:create' %}" class="btn-primary"
+         style="display:inline-block;width:auto;padding:12px 28px">Create Reel</a>
     </div>
   {% endif %}
 </div>

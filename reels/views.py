@@ -1,21 +1,3 @@
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-
-
-@login_required
-def home_view(request):
-    return render(request, 'reels/index.html')
-from django.urls import path
-from django.shortcuts import render
-
-app_name = 'reels'
-
-def placeholder(request):
-    return render(request, 'reels/placeholder.html')
-
-urlpatterns = [
-    path('', placeholder, name='list'),
-]
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -154,3 +136,13 @@ def delete_reel_view(request, pk):
     reel = get_object_or_404(Reel, pk=pk, author=request.user)
     reel.delete()
     return redirect('users:profile', username=request.user.username)
+
+
+# ── View count ────────────────────────────────────────────────────
+@require_POST
+def view_reel_view(request, pk):
+    """Called by JS after 2 seconds of watching. Increments view counter."""
+    from django.db.models import F
+    Reel.objects.filter(pk=pk).update(views=F('views') + 1)
+    reel = Reel.objects.get(pk=pk)
+    return JsonResponse({'views': reel.format_views()})

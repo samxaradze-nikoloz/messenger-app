@@ -12,4 +12,5 @@ urlpatterns = [
     path('<uuid:pk>/repost/',   views.repost_reel_view,  name='repost'),
     path('<uuid:pk>/comment/',  views.comment_reel_view, name='comment'),
     path('<uuid:pk>/delete/',   views.delete_reel_view,  name='delete'),
+    path('<uuid:pk>/view/',     views.view_reel_view,    name='view'),
 ]

@@ -4,12 +4,20 @@ import uuid
 
 
 class Reel(models.Model):
+    RATIO_CHOICES = [
+        ('9:16', '9:16 — Vertical (default)'),
+        ('1:1',  '1:1 — Square'),
+        ('4:5',  '4:5 — Portrait'),
+    ]
+
     id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author      = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reels')
     video       = models.FileField(upload_to='reels/videos/')
     thumbnail   = models.ImageField(upload_to='reels/thumbs/', blank=True, null=True)
     caption     = models.TextField(max_length=2200, blank=True)
-    audio_name  = models.CharField(max_length=200, blank=True)   # "Original audio"
+    audio_name  = models.CharField(max_length=200, blank=True)
+    ratio       = models.CharField(max_length=4, choices=RATIO_CHOICES, default='9:16')
+    views       = models.PositiveBigIntegerField(default=0)
     created_at  = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -35,6 +43,14 @@ class Reel(models.Model):
             return False
         return self.reel_saves.filter(user=user).exists()
 
+    def format_views(self):
+        v = self.views
+        if v >= 1_000_000:
+            return f'{v/1_000_000:.1f}M'
+        if v >= 1_000:
+            return f'{v/1_000:.1f}K'
+        return str(v)
+
 
 class ReelLike(models.Model):
     reel       = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='reel_likes')
@@ -42,7 +58,7 @@ class ReelLike(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table      = 'reel_likes'
+        db_table        = 'reel_likes'
         unique_together = ('reel', 'user')
 
 
@@ -64,16 +80,15 @@ class ReelSave(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table      = 'reel_saves'
+        db_table        = 'reel_saves'
         unique_together = ('reel', 'user')
 
 
 class ReelRepost(models.Model):
-    """User reposts a reel to their profile."""
     reel       = models.ForeignKey(Reel, on_delete=models.CASCADE, related_name='reposts')
     user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reposted_reels')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table      = 'reel_reposts'
+        db_table        = 'reel_reposts'
         unique_together = ('reel', 'user')

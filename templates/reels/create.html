@@ -6,6 +6,7 @@
 
 {% block content %}
 <div class="create-reel-page">
+
   <div class="create-reel-header">
     <a href="javascript:history.back()" class="back-btn">←</a>
     <h2>New Reel</h2>
@@ -15,26 +16,73 @@
 
   <form method="post" enctype="multipart/form-data" class="create-reel-form" id="reelForm">
     {% csrf_token %}
+    <!-- ratio is set by JS when user picks it -->
+    <input type="hidden" name="ratio" id="ratioInput" value="9:16" />
 
-    <div class="reel-upload-area" id="reelDropZone">
-      <div class="reel-drop-inner" id="reelDropInner">
-        <div class="reel-drop-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="56" height="56"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/></svg>
+    <!-- ── LEFT: video upload + ratio picker ────────────────── -->
+    <div class="create-reel-left">
+
+      <!-- Drop zone -->
+      <div class="reel-upload-area" id="reelDropZone">
+        <div class="reel-drop-inner" id="reelDropInner">
+          <div class="reel-drop-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" width="56" height="56">
+              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+              <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 7h5M17 17h5"/>
+            </svg>
+          </div>
+          <p class="reel-drop-title">Select a video</p>
+          <p class="reel-drop-hint">MP4, MOV, WEBM · max 100MB</p>
+          <label class="reel-select-btn">
+            Browse files
+            <input type="file" name="video" id="videoInput" accept="video/*" hidden required />
+          </label>
         </div>
-        <p class="reel-drop-title">Select a video</p>
-        <p class="reel-drop-hint">MP4, MOV, WEBM · max 100MB</p>
-        <label class="reel-select-btn">
-          Browse files
-          <input type="file" name="video" id="videoInput" accept="video/*" hidden required />
-        </label>
+
+        <!-- Video preview (shown after picking) -->
+        <div class="reel-preview-wrap" id="reelPreviewWrap" style="display:none">
+          <div class="reel-ratio-frame" id="ratioFrame">
+            <video id="reelPreviewVideo" loop muted playsinline class="reel-preview-video"></video>
+            <!-- crop overlay guides -->
+            <div class="ratio-guide-overlay" id="ratioGuide"></div>
+          </div>
+        </div>
       </div>
-      <!-- Preview -->
-      <div class="reel-preview-wrap" id="reelPreviewWrap" style="display:none">
-        <video id="reelPreviewVideo" controls class="reel-preview-video"></video>
+
+      <!-- ── RATIO PICKER (appears after video chosen) ──────── -->
+      <div class="ratio-picker" id="ratioPicker" style="display:none">
+        <p class="ratio-picker-label">Video ratio</p>
+        <div class="ratio-options">
+
+          <button type="button" class="ratio-btn active" data-ratio="9:16"
+                  data-w="9" data-h="16">
+            <div class="ratio-icon ratio-916"></div>
+            <span>9:16</span>
+            <small>Vertical</small>
+          </button>
+
+          <button type="button" class="ratio-btn" data-ratio="4:5"
+                  data-w="4" data-h="5">
+            <div class="ratio-icon ratio-45"></div>
+            <span>4:5</span>
+            <small>Portrait</small>
+          </button>
+
+          <button type="button" class="ratio-btn" data-ratio="1:1"
+                  data-w="1" data-h="1">
+            <div class="ratio-icon ratio-11"></div>
+            <span>1:1</span>
+            <small>Square</small>
+          </button>
+
+        </div>
       </div>
+
     </div>
 
+    <!-- ── RIGHT: metadata ──────────────────────────────────── -->
     <div class="reel-meta-fields">
+
       <div class="reel-meta-author">
         {% if request.user.avatar %}
           <img src="{{ request.user.avatar.url }}" class="cap-av" />
@@ -44,7 +92,8 @@
         <span class="cap-username">{{ request.user.username }}</span>
       </div>
 
-      <textarea name="caption" placeholder="Write a caption…" maxlength="2200" rows="3" class="reel-caption-input"></textarea>
+      <textarea name="caption" placeholder="Write a caption…"
+                maxlength="2200" rows="3" class="reel-caption-input"></textarea>
 
       <div class="reel-field">
         <label>Audio name</label>
@@ -54,56 +103,111 @@
       <div class="reel-field">
         <label>Thumbnail <span style="color:var(--text-muted)">(optional)</span></label>
         <label class="reel-thumb-upload">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
           Choose thumbnail
           <input type="file" name="thumbnail" id="thumbInput" accept="image/*" hidden />
         </label>
-        <img id="thumbPreview" style="display:none;width:80px;height:80px;border-radius:8px;object-fit:cover;margin-top:8px" />
+        <img id="thumbPreview"
+             style="display:none;width:80px;height:80px;border-radius:8px;object-fit:cover;margin-top:8px" />
       </div>
+
+      <!-- Selected ratio badge -->
+      <div class="reel-field" id="selectedRatioField" style="display:none">
+        <label>Selected ratio</label>
+        <div class="ratio-selected-badge" id="ratioSelectedBadge">9:16 — Vertical</div>
+      </div>
+
+      <button type="submit" class="reel-submit-btn" id="reelSubmit" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+        Share Reel
+      </button>
+      <a href="javascript:history.back()" class="reel-discard">Discard</a>
+
     </div>
 
-    <button type="submit" class="reel-submit-btn" id="reelSubmit" disabled>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      Share Reel
-    </button>
-    <a href="javascript:history.back()" class="reel-discard">Discard</a>
   </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const videoInput   = document.getElementById('videoInput');
-const reelDropInner= document.getElementById('reelDropInner');
-const previewWrap  = document.getElementById('reelPreviewWrap');
-const previewVideo = document.getElementById('reelPreviewVideo');
-const submitBtn    = document.getElementById('reelSubmit');
-const thumbInput   = document.getElementById('thumbInput');
-const thumbPreview = document.getElementById('thumbPreview');
+const videoInput    = document.getElementById('videoInput');
+const reelDropInner = document.getElementById('reelDropInner');
+const previewWrap   = document.getElementById('reelPreviewWrap');
+const previewVideo  = document.getElementById('reelPreviewVideo');
+const submitBtn     = document.getElementById('reelSubmit');
+const thumbInput    = document.getElementById('thumbInput');
+const thumbPreview  = document.getElementById('thumbPreview');
+const ratioPicker   = document.getElementById('ratioPicker');
+const ratioFrame    = document.getElementById('ratioFrame');
+const ratioInput    = document.getElementById('ratioInput');
+const ratioField    = document.getElementById('selectedRatioField');
+const ratioBadge    = document.getElementById('ratioSelectedBadge');
 
-videoInput.addEventListener('change', function(){
-  const file = this.files[0]; if(!file) return;
+// Ratio frame sizes (CSS aspect-ratio driven, but we set a max-width)
+const RATIO_LABELS = {
+  '9:16': '9:16 — Vertical',
+  '4:5':  '4:5 — Portrait',
+  '1:1':  '1:1 — Square',
+};
+
+// ── Video selected ────────────────────────────────────────────────
+videoInput.addEventListener('change', function () {
+  const file = this.files[0]; if (!file) return;
   previewVideo.src = URL.createObjectURL(file);
+  previewVideo.play().catch(() => {});
   reelDropInner.style.display = 'none';
-  previewWrap.style.display   = 'block';
+  previewWrap.style.display   = 'flex';
+  ratioPicker.style.display   = 'block';
+  ratioField.style.display    = 'block';
   submitBtn.disabled = false;
+  applyRatio('9:16');  // default
 });
 
-thumbInput.addEventListener('change', function(){
-  const file = this.files[0]; if(!file) return;
+// ── Ratio picker click ────────────────────────────────────────────
+document.querySelectorAll('.ratio-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    document.querySelectorAll('.ratio-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    applyRatio(this.dataset.ratio);
+  });
+});
+
+function applyRatio(ratio) {
+  ratioInput.value = ratio;
+  ratioBadge.textContent = RATIO_LABELS[ratio] || ratio;
+
+  // Set the preview frame's aspect-ratio
+  const map = { '9:16': '9/16', '4:5': '4/5', '1:1': '1/1' };
+  ratioFrame.style.aspectRatio = map[ratio] || '9/16';
+
+  // The video fills the frame — object-fit:cover handles the crop
+  previewVideo.style.objectFit = 'cover';
+}
+
+// ── Thumbnail preview ─────────────────────────────────────────────
+thumbInput.addEventListener('change', function () {
+  const file = this.files[0]; if (!file) return;
   const r = new FileReader();
   r.onload = e => { thumbPreview.src = e.target.result; thumbPreview.style.display = 'block'; };
   r.readAsDataURL(file);
 });
 
-// Drag & drop
+// ── Drag & drop ───────────────────────────────────────────────────
 const dropZone = document.getElementById('reelDropZone');
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
   e.preventDefault(); dropZone.classList.remove('drag-over');
   const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('video/'));
-  if(!file) return;
+  if (!file) return;
   const dt = new DataTransfer(); dt.items.add(file); videoInput.files = dt.files;
   videoInput.dispatchEvent(new Event('change'));
 });

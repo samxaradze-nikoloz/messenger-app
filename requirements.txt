@@ -9,3 +9,4 @@ channels>=4.0
 channels-redis>=4.1       # for production Redis channel layer
 daphne>=4.0               # ASGI server (replaces gunicorn for WS support)
 python-dotenv>=1.0
+opencv-python>=4.8.0      # for video thumbnail extraction
